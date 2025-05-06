@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "779979423065",
+    "project_id": "appemails-ef24c",
+    "storage_bucket": "appemails-ef24c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:779979423065:android:2c74530dceb234d318a048",
+        "android_client_info": {
+          "package_name": "com.example.appemails"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDikKSfzeqXBp6H8rlIudirJSk-vs23ZfY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
