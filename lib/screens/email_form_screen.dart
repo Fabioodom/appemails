@@ -15,6 +15,17 @@ class _EmailFormScreenState extends State<EmailFormScreen> {
   final _nameCtrl  = TextEditingController();
   bool _loading = false;
 
+  static const Color _kGreen      = Color(0xFF2E7D32);
+  static const Color _kLightGreen = Color(0xFFE8F5E9);
+  static const Color _kYellow     = Color(0xFFFFEE58);
+
+  @override
+  void dispose() {
+    _emailCtrl.dispose();
+    _nameCtrl.dispose();
+    super.dispose();
+  }
+
   Future<void> _subscribe() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
@@ -24,84 +35,114 @@ class _EmailFormScreenState extends State<EmailFormScreen> {
         name: _nameCtrl.text.trim(),
       );
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('¡Gracias por suscribirte!')),
+        SnackBar(
+          content: Text('¡Gracias por suscribirte!'),
+          backgroundColor: _kGreen,
+        ),
       );
       _formKey.currentState!.reset();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al suscribir: $e')),
+        SnackBar(
+          content: Text('Error al suscribir: $e'),
+          backgroundColor: Colors.redAccent,
+        ),
       );
     } finally {
       setState(() => _loading = false);
     }
   }
 
-  @override
-  void dispose() {
-    _emailCtrl.dispose();
-    _nameCtrl.dispose();
-    super.dispose();
+  InputDecoration _buildDecoration(String label) {
+    return InputDecoration(
+      filled: true,
+      fillColor: _kLightGreen,
+      labelText: label,
+      labelStyle: TextStyle(color: _kGreen),
+      border: OutlineInputBorder(),
+      enabledBorder: OutlineInputBorder(
+        borderSide: BorderSide(color: _kGreen),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderSide: BorderSide(color: _kYellow, width: 2),
+      ),
+    );
   }
 
   @override
-Widget build(BuildContext context) {
-  return Scaffold(
-    appBar: AppBar(
-      title: Text('Suscríbete'),
-      actions: [
-        IconButton(
-          icon: Icon(Icons.settings),
-          tooltip: 'Administración',
-          onPressed: () => Navigator.of(context).pushNamed('/admin'),
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: _kGreen,
+        iconTheme: IconThemeData(color: _kYellow),
+        title: Text(
+          'Suscríbete',
+          style: TextStyle(color: _kYellow),
         ),
-      ],
-    ),
-    body: Padding(
-      padding: const EdgeInsets.all(16),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          children: [
-            // Nombre
-            TextFormField(
-              controller: _nameCtrl,
-              decoration: InputDecoration(
-                labelText: 'Nombre',
-                border: OutlineInputBorder(),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.settings),
+            color: _kYellow,
+            tooltip: 'Administración',
+            onPressed: () => Navigator.of(context).pushNamed('/admin'),
+          ),
+        ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              // Nombre
+              TextFormField(
+                controller: _nameCtrl,
+                decoration: _buildDecoration('Nombre'),
+                validator: (v) =>
+                    Validators.isNotEmpty(v) ? null : 'Introduce tu nombre',
               ),
-              validator: (v) =>
-                  Validators.isNotEmpty(v) ? null : 'Introduce tu nombre',
-            ),
-            SizedBox(height: 16),
-            // Email
-            TextFormField(
-              controller: _emailCtrl,
-              decoration: InputDecoration(
-                labelText: 'Email',
-                border: OutlineInputBorder(),
+              SizedBox(height: 16),
+              // Email
+              TextFormField(
+                controller: _emailCtrl,
+                decoration: _buildDecoration('Email'),
+                keyboardType: TextInputType.emailAddress,
+                validator: (v) =>
+                    Validators.isEmail(v) ? null : 'Email no válido',
               ),
-              keyboardType: TextInputType.emailAddress,
-              validator: (v) =>
-                  Validators.isEmail(v) ? null : 'Email no válido',
-            ),
-            SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _loading ? null : _subscribe,
-                child: _loading
-                    ? SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Text('Suscribirme'),
+              SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _loading ? null : _subscribe,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _kGreen,
+                    foregroundColor: _kYellow,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  child: _loading
+                      ? SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(_kYellow),
+                          ),
+                        )
+                      : Text(
+                          'Suscribirme',
+                          style: TextStyle(fontSize: 16),
+                        ),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 }

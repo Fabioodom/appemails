@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-//import '../services/subscriber_service.dart';
 import '../services/email_service.dart';
 import '../utils/validators.dart';
 
@@ -17,6 +16,10 @@ class _AdminScreenState extends State<AdminScreen> {
   final _subjectCtrl = TextEditingController();
   final _bodyCtrl    = TextEditingController();
   bool _loading = false;
+
+  static const Color _kGreen      = Color(0xFF2E7D32);
+  static const Color _kLightGreen = Color(0xFFE8F5E9);
+  static const Color _kYellow     = Color(0xFFFFEE58);
 
   @override
   void initState() {
@@ -34,7 +37,10 @@ class _AdminScreenState extends State<AdminScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('senderEmail', _senderCtrl.text.trim());
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Remitente guardado')),
+      SnackBar(
+        content: Text('Remitente guardado'),
+        backgroundColor: _kYellow,
+      ),
     );
   }
 
@@ -43,22 +49,23 @@ class _AdminScreenState extends State<AdminScreen> {
     setState(() => _loading = true);
 
     try {
-      // 1) Leer lista de suscriptores
-      
-
-      // 2) Enviar
       final count = await EmailService.sendBulkEmail(
-        sender:     _senderCtrl.text.trim(),
-        subject:    _subjectCtrl.text.trim(),
-        body:       _bodyCtrl.text.trim(),
+        sender:  _senderCtrl.text.trim(),
+        subject: _subjectCtrl.text.trim(),
+        body:    _bodyCtrl.text.trim(),
       );
-
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Enviados $count correos')),
+        SnackBar(
+          content: Text('Enviados $count correos'),
+          backgroundColor: _kYellow,
+        ),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al enviar: $e')),
+        SnackBar(
+          content: Text('Error al enviar: $e'),
+          backgroundColor: Colors.redAccent,
+        ),
       );
     } finally {
       setState(() => _loading = false);
@@ -73,10 +80,37 @@ class _AdminScreenState extends State<AdminScreen> {
     super.dispose();
   }
 
+  InputDecoration _buildDecoration(
+    String label, {
+    bool alignLabelWithHint = false,
+  }) {
+    return InputDecoration(
+      filled: true,
+      fillColor: _kLightGreen,
+      labelText: label,
+      labelStyle: TextStyle(color: _kGreen),
+      alignLabelWithHint: alignLabelWithHint,
+      border: OutlineInputBorder(),
+      enabledBorder: OutlineInputBorder(
+        borderSide: BorderSide(color: _kGreen),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderSide: BorderSide(color: _kYellow, width: 2),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Administración')),
+      appBar: AppBar(
+        backgroundColor: _kGreen,
+        iconTheme: IconThemeData(color: _kYellow),
+        title: Text(
+          'Administración',
+          style: TextStyle(color: _kYellow),
+        ),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -86,10 +120,7 @@ class _AdminScreenState extends State<AdminScreen> {
               // Remitente
               TextFormField(
                 controller: _senderCtrl,
-                decoration: InputDecoration(
-                  labelText: 'Correo remitente',
-                  border: OutlineInputBorder(),
-                ),
+                decoration: _buildDecoration('Correo remitente'),
                 keyboardType: TextInputType.emailAddress,
                 validator: (v) =>
                     Validators.isEmail(v) ? null : 'Email no válido',
@@ -100,6 +131,7 @@ class _AdminScreenState extends State<AdminScreen> {
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   onPressed: _saveSender,
+                  style: TextButton.styleFrom(foregroundColor: _kGreen),
                   child: Text('Guardar remitente'),
                 ),
               ),
@@ -108,10 +140,7 @@ class _AdminScreenState extends State<AdminScreen> {
               // Asunto
               TextFormField(
                 controller: _subjectCtrl,
-                decoration: InputDecoration(
-                  labelText: 'Asunto',
-                  border: OutlineInputBorder(),
-                ),
+                decoration: _buildDecoration('Asunto'),
                 validator: (v) =>
                     Validators.isNotEmpty(v) ? null : 'Asunto requerido',
               ),
@@ -120,10 +149,9 @@ class _AdminScreenState extends State<AdminScreen> {
               // Cuerpo
               TextFormField(
                 controller: _bodyCtrl,
-                decoration: InputDecoration(
-                  labelText: 'Cuerpo del email',
+                decoration: _buildDecoration(
+                  'Cuerpo del email',
                   alignLabelWithHint: true,
-                  border: OutlineInputBorder(),
                 ),
                 maxLines: 8,
                 validator: (v) =>
@@ -136,13 +164,28 @@ class _AdminScreenState extends State<AdminScreen> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: _loading ? null : _sendToAll,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _kGreen,
+                    foregroundColor: _kYellow,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: EdgeInsets.symmetric(vertical: 14),
+                  ),
                   child: _loading
                       ? SizedBox(
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(_kYellow),
+                          ),
                         )
-                      : Text('Enviar a todos los suscriptores'),
+                      : Text(
+                          'Enviar a todos los suscriptores',
+                          style: TextStyle(fontSize: 16),
+                        ),
                 ),
               ),
             ],

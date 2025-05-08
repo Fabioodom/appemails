@@ -17,7 +17,7 @@ class EmailService {
     required String subject,
     required String body,
   }) async {
-    final uri = Uri.parse('$_baseUrl/sendBulkEmail');
+    final uri = Uri.parse(_baseUrl);
     final payload = {
       'sender':      sender,
       'subject':     subject,
