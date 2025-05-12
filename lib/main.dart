@@ -1,23 +1,35 @@
 // lib/main.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'     show kIsWeb;
+import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 
-import 'package:firebase_core/firebase_core.dart';
-
-import 'firebase_options.dart';
+// implementaciones web de los plugins
+import 'package:firebase_core_web/firebase_core_web.dart';
+import 'package:firebase_auth_web/firebase_auth_web.dart';
+import 'package:cloud_firestore_web/cloud_firestore_web.dart';
 import 'routes.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 1) Inicializa Firebase con la configuración de firebase_options.dart
+  if (kIsWeb) {
+    // 1) registra las implementaciones web
+    FirebaseCoreWeb.registerWith(webPluginRegistrar);
+    FirebaseAuthWeb.registerWith(webPluginRegistrar);
+    FirebaseFirestoreWeb.registerWith(webPluginRegistrar);
+    // 2) finalmente, instala el manejador de mensajes
+    webPluginRegistrar.registerMessageHandler();
+  }
+
+  // 3) inicializa tu FirebaseApp normal
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // 2) Solo en web, registra el plugin de Firebase Auth
-
-  // 3) Arranca tu aplicación
   runApp(const MyApp());
 }
 
