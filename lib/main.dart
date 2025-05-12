@@ -8,10 +8,15 @@ import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'package:firebase_core_web/firebase_core_web.dart';
 import 'package:firebase_auth_web/firebase_auth_web.dart';
 import 'package:cloud_firestore_web/cloud_firestore_web.dart';
-import 'routes.dart';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 
+
+import 'screens/email_form_screen.dart';
+import 'screens/admin_screen.dart';
+import 'screens/privacy_screen.dart';
+import 'screens/login_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -45,7 +50,13 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
       ),
       initialRoute: '/',
-      routes: appRoutes,
+       routes: {
+        'privacy': (context) => PrivacyScreen(),
+        // Ruta de login
+        '/login': (context) => LoginScreen(),
+        // Ruta de panel de admin
+        '/admin': (context) => AdminScreen(),
+      },
     );
   }
 }
