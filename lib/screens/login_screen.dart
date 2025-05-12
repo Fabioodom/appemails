@@ -11,15 +11,15 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _formKey = GlobalKey<FormState>();
+  final _formKey  = GlobalKey<FormState>();
   final _emailCtrl = TextEditingController();
   final _passCtrl  = TextEditingController();
   bool _loading = false;
 
-  // Colores del estilo de la app
-  static const Color _kGreen      = Color(0xFF2E7D32);
-  static const Color _kLightGreen = Color(0xFFE8F5E9);
-  static const Color _kYellow     = Color(0xFFFFEE58);
+  // Colores de la app
+  static const _kGreen      = Color(0xFF2E7D32);
+  static const _kLightGreen = Color(0xFFE8F5E9);
+  static const _kYellow     = Color(0xFFFFEE58);
 
   @override
   void dispose() {
@@ -29,72 +29,63 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _login() async {
-    // 1) Validar formulario (evitamos usar ! sobre currentState)
-    final form = _formKey.currentState;
-    if (form == null || !form.validate()) return;
-
+    if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
 
     try {
-      // 2) Intentar login
-      final credential = await FirebaseAuth.instance
-          .signInWithEmailAndPassword(
-            email: _emailCtrl.text.trim(),
-            password: _passCtrl.text.trim(),
-          );
-
-      // 3) Proteger contra user == null
-      final user = credential.user;
-      if (user == null) {
-        throw Exception('No se pudo autenticar el usuario.');
-      }
-
-      // 4) Comprobar rol admin en Firestore
+      // 1) Autenticar
+      final cred = await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: _emailCtrl.text.trim(),
+        password: _passCtrl.text.trim(),
+      );
+      final user = cred.user!;
+      
+      // 2) Comprobar si está en admins/{uid}
       final adminDoc = await FirebaseFirestore.instance
-          .collection('admins')
-          .doc(user.uid)
-          .get();
+        .collection('admins')
+        .doc(user.uid)
+        .get();
 
       if (adminDoc.exists) {
-        // Admin ok
+        // 3a) Es admin → pantalla de admin
         Navigator.of(context)
-            .pushNamedAndRemoveUntil('/admin', (route) => false);
+            .pushReplacementNamed('/admin');
       } else {
-        // No admin: cerrar sesión y avisar
+        // 3b) No es admin → cerrar sesión y avisar
         await FirebaseAuth.instance.signOut();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Usuario no autorizado como admin'),
-            backgroundColor: _kYellow,
-          ),
-        );
+        _showSnack('Usuario no autorizado como admin', isError: true);
       }
-    } on FirebaseAuthException catch (e) {
-      // 5) Errores concretos de Auth
-      final code = e.code;
-      String msg;
-      if (code == 'user-not-found' || code == 'wrong-password') {
-        msg = 'Credenciales no válidas';
-      } else {
-        msg = 'Error en login: ${e.message ?? e.code}';
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(msg), backgroundColor: Colors.redAccent),
-      );
-    } catch (e) {
-      // 6) Cualquier otro error
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error inesperado: $e'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-    } finally {
+    }
+    on FirebaseAuthException catch (e) {
+      // 4) Errores de Auth
+      _showSnack(_authErrorMessage(e), isError: true);
+    }
+    catch (e) {
+      // 5) Cualquier otro
+      _showSnack('Error inesperado: $e', isError: true);
+    }
+    finally {
       setState(() => _loading = false);
     }
   }
 
-  InputDecoration _buildDecoration(String label) => InputDecoration(
+  String _authErrorMessage(FirebaseAuthException e) {
+    if (e.code == 'user-not-found' || e.code == 'wrong-password') {
+      return 'Credenciales no válidas';
+    }
+    return 'Error en login: ${e.message ?? e.code}';
+  }
+
+  void _showSnack(String msg, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: isError ? Colors.redAccent : _kYellow,
+      ),
+    );
+  }
+
+  InputDecoration _decoration(String label) => InputDecoration(
         filled: true,
         fillColor: _kLightGreen,
         labelText: label,
@@ -124,7 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               TextFormField(
                 controller: _emailCtrl,
-                decoration: _buildDecoration('Email'),
+                decoration: _decoration('Email'),
                 keyboardType: TextInputType.emailAddress,
                 validator: (v) =>
                     Validators.isEmail(v) ? null : 'Email no válido',
@@ -132,7 +123,7 @@ class _LoginScreenState extends State<LoginScreen> {
               SizedBox(height: 16),
               TextFormField(
                 controller: _passCtrl,
-                decoration: _buildDecoration('Contraseña'),
+                decoration: _decoration('Contraseña'),
                 obscureText: true,
                 validator: (v) =>
                     Validators.isNotEmpty(v) ? null : 'Requerido',
@@ -152,8 +143,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   child: _loading
                       ? SizedBox(
-                          width: 20,
-                          height: 20,
+                          width: 20, height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
                             valueColor:
