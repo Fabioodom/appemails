@@ -179,7 +179,7 @@ class _AdminScreenState extends State<AdminScreen> {
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
                             valueColor:
-                                AlwaysStoppedAnimation<Color>(_kYellow),
+                                AlwaysStoppedAnimation<Color>(_kGreen),
                           ),
                         )
                       : Text(

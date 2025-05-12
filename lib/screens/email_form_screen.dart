@@ -83,8 +83,8 @@ class _EmailFormScreenState extends State<EmailFormScreen> {
           IconButton(
             icon: Icon(Icons.settings),
             color: _kYellow,
-            tooltip: 'Administración',
-            onPressed: () => Navigator.of(context).pushNamed('/admin'),
+            tooltip: 'Ajustes',
+            onPressed: () => Navigator.of(context).pushNamed('/privacy'),
           ),
         ],
       ),
