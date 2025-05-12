@@ -85,4 +85,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'appemails-ef24c.firebasestorage.app',
     measurementId: 'G-NHJ2TQ9003',
   );
+
 }
