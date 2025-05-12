@@ -57,7 +57,7 @@ class _AdminScreenState extends State<AdminScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Enviados $count correos'),
-          backgroundColor: _kYellow,
+          backgroundColor: _kGreen,
         ),
       );
     } catch (e) {
@@ -179,7 +179,7 @@ class _AdminScreenState extends State<AdminScreen> {
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
                             valueColor:
-                                AlwaysStoppedAnimation<Color>(_kGreen),
+                                AlwaysStoppedAnimation<Color>(_kYellow),
                           ),
                         )
                       : Text(
