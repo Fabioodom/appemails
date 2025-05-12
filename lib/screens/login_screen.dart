@@ -21,13 +21,14 @@ class _LoginScreenState extends State<LoginScreen> {
   late final Future<FirebaseApp> _initFirebase;
 
   // Colores del estilo de la app
-  static const Color _kGreen = Color(0xFF2E7D32);
+  static const Color _kGreen      = Color(0xFF2E7D32);
   static const Color _kLightGreen = Color(0xFFE8F5E9);
-  static const Color _kYellow = Color(0xFFFFEE58);
+  static const Color _kYellow     = Color(0xFFFFEE58);
 
   @override
   void initState() {
     super.initState();
+    // Inicializamos Firebase
     _initFirebase = Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
@@ -41,50 +42,53 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _login() async {
-  // 1) Validar formulario de forma segura
-  final form = _formKey.currentState;
-  if (form == null || !form.validate()) return;
+    // 1) Validar formulario de forma segura
+    final form = _formKey.currentState;
+    if (form == null || !form.validate()) return;
 
-  setState(() => _loading = true);
+    setState(() => _loading = true);
 
-  try {
-    // 2) Intentar login
-    final cred = await FirebaseAuth.instance
-      .signInWithEmailAndPassword(
-        email: _emailCtrl.text.trim(),
-        password: _passCtrl.text.trim(),
-      );
+    try {
+      // 2) Intentar login
+      final cred = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(
+            email: _emailCtrl.text.trim(),
+            password: _passCtrl.text.trim(),
+          );
 
-    // 3) Comprobar que cred.user no sea null
-    final user = cred.user;
-    if (user == null) {
-      throw Exception('No se pudo obtener datos del usuario.');
+      // 3) Comprobar que cred.user no sea null
+      final user = cred.user;
+      if (user == null) {
+        throw Exception('No se pudo obtener datos del usuario.');
+      }
+
+      // 4) Leer en Firestore admins/{uid}
+      final adminDoc = await FirebaseFirestore.instance
+          .collection('admins')
+          .doc(user.uid)
+          .get();
+
+      if (adminDoc.exists) {
+        // Es admin: navegar y reemplazar la pila
+        Navigator.of(context).pushReplacementNamed('/admin');
+      } else {
+        // No es admin: cerrar sesión y avisar
+        await FirebaseAuth.instance.signOut();
+        _showSnack('Usuario no autorizado como admin', isError: true);
+      }
+    } on FirebaseAuthException catch (e) {
+      // Errores específicos de Auth
+      _showSnack(_authErrorMessage(e), isError: true);
+    } catch (e) {
+      // Cualquier otro error
+      _showSnack('Error inesperado: $e', isError: true);
+    } finally {
+      setState(() => _loading = false);
     }
+  }
 
-    // 4) Leer en Firestore admins/{uid}
-    final adminDoc = await FirebaseFirestore.instance
-      .collection('admins')
-      .doc(user.uid)
-      .get();
-
-    if (adminDoc.exists) {
-      Navigator.of(context).pushReplacementNamed('/admin');
-    } else {
-      await FirebaseAuth.instance.signOut();
-      _showSnack('Usuario no autorizado como admin', isError: true);
-    }
-  }
-  on FirebaseAuthException catch (e) {
-    _showSnack(_authErrorMessage(e), isError: true);
-  }
-  catch (e) {
-    _showSnack('Error inesperado: $e', isError: true);
-  }
-  finally {
-    setState(() => _loading = false);
-  }
-}
-void _showSnack(String mensaje, {bool isError = false}) {
+  /// Muestra un SnackBar con mensaje y color según sea error o no
+  void _showSnack(String mensaje, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(mensaje),
@@ -93,7 +97,7 @@ void _showSnack(String mensaje, {bool isError = false}) {
     );
   }
 
-  // ——— MÉTODO PARA TRADUCIR CÓDIGOS DE ERROR DE AUTH ———
+  /// Traduce códigos de FirebaseAuthException a mensajes de usuario
   String _authErrorMessage(FirebaseAuthException e) {
     if (e.code == 'user-not-found' || e.code == 'wrong-password') {
       return 'Credenciales no válidas';
@@ -147,16 +151,18 @@ void _showSnack(String mensaje, {bool isError = false}) {
                     controller: _emailCtrl,
                     decoration: _buildDecoration('Email'),
                     keyboardType: TextInputType.emailAddress,
-                    validator: (v) => Validators.isEmail(v) ? null : 'Email no válido',
+                    validator: (v) =>
+                        Validators.isEmail(v) ? null : 'Email no válido',
                   ),
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
                   TextFormField(
                     controller: _passCtrl,
                     decoration: _buildDecoration('Contraseña'),
                     obscureText: true,
-                    validator: (v) => Validators.isNotEmpty(v) ? null : 'Requerido',
+                    validator: (v) =>
+                        Validators.isNotEmpty(v) ? null : 'Requerido',
                   ),
-                  SizedBox(height: 24),
+                  const SizedBox(height: 24),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -167,7 +173,7 @@ void _showSnack(String mensaje, {bool isError = false}) {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        padding: EdgeInsets.symmetric(vertical: 14),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                       child: _loading
                           ? SizedBox(
@@ -175,7 +181,8 @@ void _showSnack(String mensaje, {bool isError = false}) {
                               height: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(_kYellow),
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(_kYellow),
                               ),
                             )
                           : Text(
