@@ -1,16 +1,14 @@
 // lib/main.dart
 
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart'     show kIsWeb;
-import 'package:flutter_web_plugins/flutter_web_plugins.dart';
-
-// implementaciones web de los plugins Firebase
-import 'package:firebase_core_web/firebase_core_web.dart';
-import 'package:firebase_auth_web/firebase_auth_web.dart';
-import 'package:cloud_firestore_web/cloud_firestore_web.dart';
-
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+
+// IMPORT CONDICIONAL:
+// - Android/iOS: carga firebase_registrant_mobile.dart (stub vacío)
+// - Web       : carga firebase_registrant_web.dart (registra plugins JS)
+import 'firebase_registrant_mobile.dart'
+    if (dart.library.html) 'firebase_registrant_web.dart';
 
 import 'screens/email_form_screen.dart';
 import 'screens/privacy_screen.dart';
@@ -23,12 +21,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  if (kIsWeb) {
-    FirebaseCoreWeb.registerWith(webPluginRegistrar);
-    FirebaseAuthWeb.registerWith(webPluginRegistrar);
-    FirebaseFirestoreWeb.registerWith(webPluginRegistrar);
-    webPluginRegistrar.registerMessageHandler();
-  }
+  // En móvil es no-op; en web registra los plugins JS de Firebase
+  registerPlugins();
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
@@ -42,10 +36,8 @@ class MyApp extends StatelessWidget {
 
   Route<dynamic>? _onGenerateRoute(RouteSettings settings) {
     if (settings.name == '/admin') {
-      // Envolvemos AdminScreen en un guard
       return MaterialPageRoute(builder: (_) => AdminGuard());
     }
-    // Devolvemos null para que Flutter use `routes:` o el fallback
     return null;
   }
 
@@ -55,23 +47,16 @@ class MyApp extends StatelessWidget {
       title: 'Mi App Mail',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.blue),
-
-      // 1) Siempre carga primero el formulario:
       home: EmailFormScreen(),
-
-      // 2) Rutas sencillas:
       routes: {
         '/login':   (_) => LoginScreen(),
         '/privacy': (_) => PrivacyScreen(),
       },
-
-      // 3) Solo para `/admin` pasamos por aquí:
       onGenerateRoute: _onGenerateRoute,
     );
   }
 }
 
-/// Widget que verifica autenticación y rol antes de mostrar AdminScreen
 class AdminGuard extends StatefulWidget {
   @override
   _AdminGuardState createState() => _AdminGuardState();
@@ -98,8 +83,7 @@ class _AdminGuardState extends State<AdminGuard> {
 
   void _redirectToLogin() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Navigator.of(context)
-        .pushReplacementNamed('/login');
+      Navigator.of(context).pushReplacementNamed('/login');
     });
   }
 
@@ -116,9 +100,8 @@ class _AdminGuardState extends State<AdminGuard> {
         if (snap.data == true) {
           return AdminScreen();
         }
-        // Si no está autorizado, redirigimos:
         _redirectToLogin();
-        return const Scaffold(); // vacío mientras navegamos
+        return const Scaffold();
       },
     );
   }
