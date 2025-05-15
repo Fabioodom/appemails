@@ -14,6 +14,7 @@ import 'screens/email_form_screen.dart';
 import 'screens/privacy_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/admin_screen.dart';
+import 'screens/whatsapp_groups_screen.dart';   // <-- Import de la pantalla WhatsApp
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -35,12 +36,22 @@ class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
 
   Route<dynamic>? _onGenerateRoute(RouteSettings settings) {
-    if (settings.name == '/admin') {
-      return MaterialPageRoute(builder: (_) => AdminGuard());
+    switch (settings.name) {
+      case '/admin':
+        // Ruta protegida para la sección de Emails (AdminScreen)
+        return MaterialPageRoute(
+          builder: (_) => AdminGuard(child: AdminScreen()),
+        );
+      case '/whatsappGroups':
+        // Ruta protegida para la sección de Grupos WhatsApp
+        return MaterialPageRoute(
+          builder: (_) => AdminGuard(child: WhatsappGroupsScreen()),
+        );
+      default:
+        return null;
     }
-    return null;
   }
-
+  
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -57,7 +68,15 @@ class MyApp extends StatelessWidget {
   }
 }
 
+/// Widget genérico que protege cualquier pantalla de solo-admin
 class AdminGuard extends StatefulWidget {
+  final Widget child;
+
+  const AdminGuard({
+    Key? key,
+    required this.child,
+  }) : super(key: key);
+
   @override
   _AdminGuardState createState() => _AdminGuardState();
 }
@@ -98,8 +117,10 @@ class _AdminGuardState extends State<AdminGuard> {
           );
         }
         if (snap.data == true) {
-          return AdminScreen();
+          // Si es admin, muestra la pantalla solicitada
+          return widget.child;
         }
+        // Si no, redirige a login
         _redirectToLogin();
         return const Scaffold();
       },

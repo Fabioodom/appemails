@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import '../services/subscriber_service.dart';
 import '../utils/validators.dart';
+import 'package:flutter/services.dart';
 
 class EmailFormScreen extends StatefulWidget {
   @override
@@ -13,6 +14,7 @@ class _EmailFormScreenState extends State<EmailFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailCtrl = TextEditingController();
   final _nameCtrl  = TextEditingController();
+  final _phoneCtrl   = TextEditingController();
   bool _loading = false;
 
   static const Color _kGreen      = Color(0xFF2E7D32);
@@ -23,6 +25,7 @@ class _EmailFormScreenState extends State<EmailFormScreen> {
   void dispose() {
     _emailCtrl.dispose();
     _nameCtrl.dispose();
+    _phoneCtrl.dispose();
     super.dispose();
   }
 
@@ -30,9 +33,11 @@ class _EmailFormScreenState extends State<EmailFormScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
     try {
+      final fullPhone = '+34${_phoneCtrl.text.trim()}';
       await SubscriberService.addSubscriber(
         email: _emailCtrl.text.trim(),
         name: _nameCtrl.text.trim(),
+        phone: fullPhone,
       );
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -109,6 +114,27 @@ class _EmailFormScreenState extends State<EmailFormScreen> {
                 keyboardType: TextInputType.emailAddress,
                 validator: (v) =>
                     Validators.isEmail(v) ? null : 'Email no válido',
+              ),
+
+              SizedBox(height: 16),
+              // Teléfono
+              TextFormField(
+                controller: _phoneCtrl,
+                decoration: _buildDecoration('Teléfono').copyWith(
+                  prefixText: '+34 ',
+                  prefixStyle: TextStyle(color: _kGreen, fontWeight: FontWeight.bold),
+                ),
+                keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,      // Solo dígitos tras el prefijo
+                ],
+                validator: (v) {
+                  final entered = v?.trim() ?? '';
+                  // Validamos el +34 + resto de dígitos
+                  return Validators.isPhone('+34$entered')
+                      ? null
+                      : 'Teléfono no válido';
+                },
               ),
               SizedBox(height: 24),
               SizedBox(

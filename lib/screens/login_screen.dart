@@ -5,6 +5,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../utils/validators.dart';
 
+/// Destinos posibles tras el login
+enum Destination { whatsapp, email }
+
 class LoginScreen extends StatefulWidget {
   @override
   _LoginScreenState createState() => _LoginScreenState();
@@ -15,6 +18,9 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailCtrl = TextEditingController();
   final _passCtrl  = TextEditingController();
   bool _loading    = false;
+
+  /// Estado de la selección (por defecto, ir a Emails)
+  Destination _dest = Destination.email;
 
   static const _kGreen      = Color(0xFF2E7D32);
   static const _kLightGreen = Color(0xFFE8F5E9);
@@ -50,11 +56,21 @@ class _LoginScreenState extends State<LoginScreen> {
         .doc(user.uid)
         .get();
 
-      if (adminDoc.exists) {
-        Navigator.of(context).pushReplacementNamed('/admin');
-      } else {
+      if (!adminDoc.exists) {
         await FirebaseAuth.instance.signOut();
         _showSnack('Usuario no autorizado como admin', isError: true);
+      } else {
+        // Navegar según la selección del usuario
+        switch (_dest) {
+          case Destination.whatsapp:
+            Navigator.of(context)
+              .pushReplacementNamed('/whatsappGroups');
+            break;
+          case Destination.email:
+            Navigator.of(context)
+              .pushReplacementNamed('/admin');
+            break;
+        }
       }
     } on FirebaseAuthException {
       _showSnack('Credenciales inválidas', isError: true);
@@ -102,6 +118,7 @@ class _LoginScreenState extends State<LoginScreen> {
           key: _formKey,
           child: Column(
             children: [
+              // Email
               TextFormField(
                 controller: _emailCtrl,
                 decoration: _decoration('Email'),
@@ -110,6 +127,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     Validators.isEmail(v) ? null : 'Email no válido',
               ),
               const SizedBox(height: 16),
+
+              // Contraseña
               TextFormField(
                 controller: _passCtrl,
                 decoration: _decoration('Contraseña'),
@@ -118,6 +137,37 @@ class _LoginScreenState extends State<LoginScreen> {
                     Validators.isNotEmpty(v) ? null : 'Requerido',
               ),
               const SizedBox(height: 24),
+
+              // Selección de destino tras login
+              Row(
+                children: [
+                  Expanded(
+                    child: RadioListTile<Destination>(
+                      title: const Text('WhatsApp'),
+                      value: Destination.whatsapp,
+                      groupValue: _dest,
+                      activeColor: _kGreen,
+                      onChanged: (Destination? val) {
+                        if (val != null) setState(() => _dest = val);
+                      },
+                    ),
+                  ),
+                  Expanded(
+                    child: RadioListTile<Destination>(
+                      title: const Text('Emails'),
+                      value: Destination.email,
+                      groupValue: _dest,
+                      activeColor: _kGreen,
+                      onChanged: (Destination? val) {
+                        if (val != null) setState(() => _dest = val);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Botón Entrar
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
